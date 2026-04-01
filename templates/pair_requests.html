@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SafeLink - Pair Requests</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d') no-repeat center center/cover;
+            padding: 30px;
+            color: white;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .flash {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .request-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .request-card h3 {
+            margin-bottom: 8px;
+        }
+
+        .request-card p {
+            color: #ddd;
+            margin-bottom: 10px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            font-size: 0.9rem;
+            transition: 0.3s;
+        }
+
+        .btn-accept {
+            background: linear-gradient(45deg, #11998e, #38ef7d);
+        }
+
+        .btn-reject {
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        .no-requests {
+            text-align: center;
+            color: #ffd6d6;
+        }
+
+        .back {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #ffcf8b;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h2>Pair Requests</h2>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="flash">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if requests_list %}
+        {% for req in requests_list %}
+            <div class="request-card">
+                <h3>{{ req.sender_name }}</h3>
+                <p>📞 {{ req.sender_phone }}</p>
+                <p>📧 {{ req.sender_email }}</p>
+
+                <div class="actions">
+                    <a href="/accept-request/{{ req.id }}" class="btn btn-accept">Accept</a>
+                    <a href="/reject-request/{{ req.id }}" class="btn btn-reject">Reject</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="no-requests">No pending requests</p>
+    {% endif %}
+
+    <a href="/dashboard" class="back">← Back to Dashboard</a>
+
+</div>
+
+</body>
+</html>
