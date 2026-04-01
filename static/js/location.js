@@ -166,32 +166,102 @@ function startAutoRefresh(interval = 5000) {
 // ===== LIVE TRACKING ADDITION (DO NOT MODIFY EXISTING CODE) =====
 
 let trackingInterval = null;
-
-function startTracking() {
+function startTracking(isAutoResume = false) {
     if (trackingInterval !== null) {
         setStatus("Already sharing location.");
         return;
     }
 
-    setStatus("Live location sharing started...");
+    const startWork = () => {
+        setStatus(isAutoResume ? "Live location resumed..." : "Live location sharing started...");
 
-    // send immediately
-    updateMyLocation();
-
-    // then repeat every 5 seconds
-    trackingInterval = setInterval(() => {
         updateMyLocation();
-    }, 5000);
+
+        trackingInterval = setInterval(() => {
+            updateMyLocation();
+        }, 5000);
+    };
+
+    if (isAutoResume) {
+        startWork();
+    } else {
+        notifyStartSharing()
+            .then(data => {
+                if (data.success) {
+                    startWork();
+                } else {
+                    setStatus("Failed to start sharing.");
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                setStatus("Error starting sharing.");
+            });
+    }
 }
 
 function stopTracking() {
     if (trackingInterval === null) {
-        setStatus("Tracking is not active.");
+        notifyStopSharing()
+            .then(() => {
+                setStatus("Tracking is not active.");
+            })
+            .catch(error => {
+                console.error(error);
+                setStatus("Error stopping sharing.");
+            });
         return;
     }
 
     clearInterval(trackingInterval);
     trackingInterval = null;
 
-    setStatus("Live location sharing stopped.");
+    notifyStopSharing()
+        .then(data => {
+            if (data.success) {
+                setStatus("Live location sharing stopped.");
+            } else {
+                setStatus("Failed to stop sharing.");
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            setStatus("Error stopping sharing.");
+        });
 }
+// ===== BACKEND SHARING STATE ADDITION =====
+
+function notifyStartSharing() {
+    return fetch("/start-sharing", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    }).then(response => response.json());
+}
+
+function notifyStopSharing() {
+    return fetch("/stop-sharing", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    }).then(response => response.json());
+}
+
+function loadSharingStatus() {
+    fetch("/get-sharing-status")
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.is_sharing) {
+                startTracking(true);
+            }
+        })
+        .catch(error => {
+            console.error("Error loading sharing status:", error);
+        });
+}
+document.addEventListener("DOMContentLoaded", function () {
+    loadSharingStatus();
+    startAutoRefresh();
+});
