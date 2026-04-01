@@ -68,7 +68,15 @@ def init_db():
             alert_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-
+    # ADD THIS inside init_db(), after other CREATE TABLES
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS sharing_status (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE NOT NULL,
+            is_sharing INTEGER DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
     conn.close()
 
@@ -174,7 +182,90 @@ def dashboard():
 
     conn.close()
     return render_template("dashboard.html", paired_user=paired_user)
+@app.route("/start-sharing", methods=["POST"])
+@login_required
+def start_sharing():
+    user_id = session["user_id"]
+    conn = get_db_connection()
 
+    existing = conn.execute(
+        "SELECT * FROM sharing_status WHERE user_id = ?",
+        (user_id,)
+    ).fetchone()
+
+    if existing:
+        conn.execute("""
+            UPDATE sharing_status
+            SET is_sharing = 1, updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+        """, (user_id,))
+    else:
+        conn.execute("""
+            INSERT INTO sharing_status (user_id, is_sharing)
+            VALUES (?, 1)
+        """, (user_id,))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"success": True, "message": "Sharing started"})
+
+
+@app.route("/stop-sharing", methods=["POST"])
+@login_required
+def stop_sharing():
+    user_id = session["user_id"]
+    conn = get_db_connection()
+
+    existing = conn.execute(
+        "SELECT * FROM sharing_status WHERE user_id = ?",
+        (user_id,)
+    ).fetchone()
+
+    if existing:
+        conn.execute("""
+            UPDATE sharing_status
+            SET is_sharing = 0, updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+        """, (user_id,))
+    else:
+        conn.execute("""
+            INSERT INTO sharing_status (user_id, is_sharing)
+            VALUES (?, 0)
+        """, (user_id,))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"success": True, "message": "Sharing stopped"})
+
+
+@app.route("/get-sharing-status")
+@login_required
+def get_sharing_status():
+    user_id = session["user_id"]
+    conn = get_db_connection()
+
+    row = conn.execute("""
+        SELECT is_sharing, updated_at
+        FROM sharing_status
+        WHERE user_id = ?
+    """, (user_id,)).fetchone()
+
+    conn.close()
+
+    if row:
+        return jsonify({
+            "success": True,
+            "is_sharing": bool(row["is_sharing"]),
+            "updated_at": row["updated_at"]
+        })
+
+    return jsonify({
+        "success": True,
+        "is_sharing": False,
+        "updated_at": None
+    })
 
 # -------------------- SEND PAIR REQUEST --------------------
 @app.route("/send-request", methods=["GET", "POST"])
@@ -495,6 +586,7 @@ def view_sos():
 
 
 # -------------------- RUN APP --------------------
+init_db()
+
 if __name__ == "__main__":
-    init_db()
     app.run(host="0.0.0.0", port=5000, debug=True)
