@@ -156,9 +156,42 @@ function sendSOS() {
             console.error(error);
             setStatus("Unable to get location for SOS.");
         }
+        
     );
 }
 
 function startAutoRefresh(interval = 5000) {
     setInterval(refreshPairedLocation, interval);
+}
+// ===== LIVE TRACKING ADDITION (DO NOT MODIFY EXISTING CODE) =====
+
+let trackingInterval = null;
+
+function startTracking() {
+    if (trackingInterval !== null) {
+        setStatus("Already sharing location.");
+        return;
+    }
+
+    setStatus("Live location sharing started...");
+
+    // send immediately
+    updateMyLocation();
+
+    // then repeat every 5 seconds
+    trackingInterval = setInterval(() => {
+        updateMyLocation();
+    }, 5000);
+}
+
+function stopTracking() {
+    if (trackingInterval === null) {
+        setStatus("Tracking is not active.");
+        return;
+    }
+
+    clearInterval(trackingInterval);
+    trackingInterval = null;
+
+    setStatus("Live location sharing stopped.");
 }
