@@ -106,8 +106,23 @@ function refreshPairedLocation() {
 
                 setStatus("Paired user location updated.");
             } else {
-                setStatus(data.message || "No paired user location found.");
-            }
+    setStatus(data.message || "No location found.");
+
+    if (pairedMarker) {
+        map.removeLayer(pairedMarker);
+        pairedMarker = null;
+    }
+
+    if (document.getElementById("latText")) {
+        document.getElementById("latText").innerText = "-";
+    }
+    if (document.getElementById("lngText")) {
+        document.getElementById("lngText").innerText = "-";
+    }
+    if (document.getElementById("timeText")) {
+        document.getElementById("timeText").innerText = "-";
+    }
+}
         })
         .catch(error => {
             console.error(error);
