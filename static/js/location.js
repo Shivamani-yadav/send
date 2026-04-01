@@ -262,6 +262,7 @@ function loadSharingStatus() {
         });
 }
 document.addEventListener("DOMContentLoaded", function () {
+    initializeMap();
     loadSharingStatus();
     startAutoRefresh();
 });
